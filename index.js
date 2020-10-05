@@ -31,7 +31,10 @@ app.get('/:id', async (req, res) => {
 
     try {
         const url = await urls.findOne({ slug });
+
         if (url) {
+            const newCount = url.count + 1;
+            await urls.update({ _id: url._id }, { $set: { count: newCount } });
             return res.redirect(url.url);
         } else {
             return res.status(404).send();
@@ -44,6 +47,7 @@ app.get('/:id', async (req, res) => {
 const schema = yup.object().shape({
     slug: yup.string().trim().matches(/[\w\-]/i),
     url: yup.string().trim().url().required(),
+    count: yup.number(),
 })
 
 app.post('/url', async (req, res, next) => {
@@ -62,9 +66,11 @@ app.post('/url', async (req, res, next) => {
             }
         }
         slug = slug.toLowerCase();
+        let count = 0;
         const newUrl = {
             slug,
             url,
+            count,
         }
         const created = await urls.insert(newUrl);
         res.json(created);
